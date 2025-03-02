@@ -4,34 +4,43 @@ using System.Text;
 using System.Text.Json;
 using Security;
 
-Console.WriteLine("Initializing Security Examples...");
 var stopwatch = new System.Diagnostics.Stopwatch();
+
+Console.WriteLine("=== Initializing Security Examples ===");
+Console.WriteLine();
 
 Console.WriteLine("SecurityRSA");
 stopwatch.Start();
 ExampleRSA();
 stopwatch.Stop();
 Console.WriteLine($"Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
+Console.WriteLine();
 
 Console.WriteLine("SecurityHybridRsaAes");
 stopwatch.Start();
 ExampleHybridRsaAes();
 stopwatch.Stop();
 Console.WriteLine($"Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
+Console.WriteLine();
 
-Console.WriteLine("SecurityHybridRsaAes");
+Console.WriteLine("SecurityHybridX25519AesCgm");
 stopwatch.Start();
 ExampleHybridX25519AesGcm();
 stopwatch.Stop();
 Console.WriteLine($"Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
+Console.WriteLine();
+
+// wait for input before exiting
+Console.Write("Press any key to exit");
+_ = Console.ReadLine();
 
 static void ExampleRSA()
 {
     // 1️⃣ Create a new instance of SecurityRSA
      var security = new SecurityRSA(bits: 2048);
 
-    // Console.WriteLine($"Public Key: {security.PublicKey}");
-    // Console.WriteLine($"Private Key: {security.PrivateKey}");
+    Console.WriteLine($"Public Key: {security.PublicKey}");
+    Console.WriteLine($"Private Key: {security.PrivateKey}");
 
     // 2️⃣ Create a message to encrypt
     var id = Guid.NewGuid();
@@ -55,8 +64,8 @@ static void ExampleHybridRsaAes()
     // 1️⃣ Create a new instance of SecurityHybrid
     var security = new SecurityHybridRsaAes(bits: 2048);
 
-    // Console.WriteLine($"Public Key: {security.PublicKey}");
-    // Console.WriteLine($"Private Key: {security.PrivateKey}");
+    Console.WriteLine($"Public Key: {security.PublicKey}");
+    Console.WriteLine($"Private Key: {security.PrivateKey}");
 
     // 2️⃣ Create a message to encrypt
     var id = Guid.NewGuid();
@@ -84,27 +93,32 @@ static void ExampleHybridX25519AesGcm()
     byte[] sharedSecretSender = SecurityHybridX25519AesCgm.ComputeSharedSecret(SenderPrivate, ReceiverPublic);
     byte[] sharedSecretReceiver = SecurityHybridX25519AesCgm.ComputeSharedSecret(ReceiverPrivate, SenderPublic);
 
-    // Both should be identical
-    Console.WriteLine($"Private Key Sender: {Convert.ToBase64String(SenderPrivate)}");
-    Console.WriteLine($"Public Key Sender: {Convert.ToBase64String(SenderPublic)}");
-    Console.WriteLine($"Public Key Receiver: {Convert.ToBase64String(ReceiverPublic)}");
-    Console.WriteLine($"Shared Secret Match: {Convert.ToBase64String(sharedSecretSender) == Convert.ToBase64String(sharedSecretReceiver)}: {Convert.ToBase64String(sharedSecretReceiver)}");
+    // output keys for debugging
+    Console.WriteLine($"Sender Private Key:   {Convert.ToBase64String(SenderPrivate)}");
+    Console.WriteLine($"Sender Public Key:    {Convert.ToBase64String(SenderPublic)}");
+    Console.WriteLine($"Receiver Private Key: {Convert.ToBase64String(ReceiverPrivate)}");
+    Console.WriteLine($"Receiver Public Key:  {Convert.ToBase64String(ReceiverPublic)}");
+    // Both shared secrets should be identical
+    Console.WriteLine($"Shared Secret Sender: {Convert.ToBase64String(sharedSecretSender)}");
+    Console.WriteLine($"Shared Secret Receív: {Convert.ToBase64String(sharedSecretReceiver)}");
+    Console.WriteLine($"Shared Secret Match:  {Convert.ToBase64String(sharedSecretSender) == Convert.ToBase64String(sharedSecretReceiver)}");
 
     // 3️⃣  Create a message to encrypt
     var id = Guid.NewGuid();
     var obj = new { payload = new { consentid = id, }, alg = "X25519-AESCGM", iss = "hcv", iat = DateTime.UtcNow, };
     var message = JsonSerializer.Serialize(obj);
-    Console.WriteLine($"Original Message: {message}");    
+    Console.WriteLine($"Original Message:     {message}");    
 
     // 4️⃣ Encrypt a message using AES-GCM with the shared secret
     (byte[] ciphertext, byte[] iv, byte[] tag) = SecurityHybridX25519AesCgm.EncryptAESGCM(message, sharedSecretSender);
     var encodedMessage = Base64Url.EncodeToString(ciphertext);
-    Console.WriteLine($"Encoded Message: {encodedMessage} ({encodedMessage.Length} bytes)");    
+    Console.WriteLine($"Encoded Message:      {encodedMessage}");    
+    Console.WriteLine($"Encoded Message Len:  {encodedMessage.Length} bytes");    
 
     // 5️⃣ Decrypt the message using AES-GCM
     string decryptedMessageReceiver = SecurityHybridX25519AesCgm.DecryptAESGCM(ciphertext, iv, tag, sharedSecretReceiver);
-    Console.WriteLine($"Decrypted Message (receiver): {decryptedMessageReceiver}");
+    Console.WriteLine($"Receiver Decrypted:   {decryptedMessageReceiver}");
 
     string decryptedMessageSender = SecurityHybridX25519AesCgm.DecryptAESGCM(ciphertext, iv, tag, sharedSecretSender);
-    Console.WriteLine($"Decrypted Message (sender): {decryptedMessageSender}");
+    Console.WriteLine($"Sender Decrypted:     {decryptedMessageSender}");
 }

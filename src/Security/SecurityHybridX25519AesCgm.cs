@@ -22,7 +22,6 @@ public class SecurityHybridX25519AesCgm
         var publicKey = ((X25519PublicKeyParameters)keyPair.Public).GetEncoded();
         return (privateKey, publicKey);
     }
-
     
     // 🔹 Compute Shared Secret using ECDH
     public static byte[] ComputeSharedSecret(byte[] privateKey, byte[] publicKey)
